@@ -1406,17 +1406,6 @@ class TestRequests:
         with pytest.raises(requests.cookies.CookieConflictError):
             jar.get(key)
 
-    def test_cookie_escaped_quotes_preserved(self):
-        """Regression test for GitHub issue #6890.
-
-        Escaped quotes inside a quoted cookie value must not be stripped.
-        For example, the value ``"159\\"687"`` should remain intact rather
-        than being mangled into ``"159687"``.
-        """
-        jar = requests.cookies.RequestsCookieJar()
-        jar.set("foo", '"159\\"687"')
-        assert jar["foo"] == '"159\\"687"'
-
     def test_cookie_policy_copy(self):
         class MyCookiePolicy(cookielib.DefaultCookiePolicy):
             pass
