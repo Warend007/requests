@@ -815,6 +815,31 @@ class TestRequests:
             r = requests.get(url, auth=auth)
             assert '"auth"' in r.request.headers["Authorization"]
 
+    def test_DIGESTAUTH_URI_SEMICOLONS(self):
+        """Semicolons in URL paths must not be stripped from the digest URI.
+
+        urlparse treats semicolons as path-parameter delimiters (RFC 1808) and
+        moves everything after the first semicolon into .params, corrupting the
+        uri field sent in the Authorization header and causing the server's
+        digest verification to fail.  urlsplit does not do this.
+        """
+        auth = HTTPDigestAuth("user", "pass")
+        auth._thread_local.init = True
+        auth._thread_local.last_nonce = "testnonce"
+        auth._thread_local.nonce_count = 0
+        auth._thread_local.chal = {
+            "realm": "test",
+            "nonce": "testnonce",
+            "qop": "auth",
+        }
+        auth._thread_local.pos = None
+        auth._thread_local.num_401_calls = 1
+
+        header = auth.build_digest_header(
+            "GET", "http://example.com/path;with;semicolons?q=1"
+        )
+        assert 'uri="/path;with;semicolons?q=1"' in header
+
     def test_POSTBIN_GET_POST_FILES(self, httpbin):
         url = httpbin("post")
         requests.post(url).raise_for_status()
